@@ -41,9 +41,8 @@ class OpenAIEvaluator(Evaluator):
 
         self.api_key = api_key
         
-        self.evaluator = ChatOpenAI(model=self.model_name,
-                                    openai_api_key=self.api_key,
-                                    **self.model_kwargs)
+        self.base_url = os.getenv("NIAH_EVALUATOR_BASE_URL")
+        self.evaluator = ChatOpenAI(model=self.model_name, openai_api_key=self.api_key, base_url=self.base_url, **self.model_kwargs)
 
     def evaluate_response(self, response: str) -> int:
         evaluator = load_evaluator(

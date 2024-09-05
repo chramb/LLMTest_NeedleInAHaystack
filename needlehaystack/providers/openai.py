@@ -45,6 +45,10 @@ class OpenAI(ModelProvider):
         if (not api_key):
             raise ValueError("NIAH_MODEL_API_KEY must be in env.")
 
+        self.base_url = os.getenv("NIAH_MODEL_BASE_URL")
+        self.api_key = api_key
+
+        self.model = AsyncOpenAI(api_key=api_key, base_url=self.base_url)
         self.model_name = model_name
         self.model_kwargs = model_kwargs
 
