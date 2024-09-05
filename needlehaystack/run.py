@@ -83,9 +83,10 @@ def get_evaluator(args: CommandArgs) -> Evaluator:
     """
     match args.evaluator.lower():
         case "openai":
+            true_answer = args.needles if args.multi_needle else args.needle
             return OpenAIEvaluator(model_name=args.evaluator_model_name,
                                    question_asked=args.retrieval_question,
-                                   true_answer=args.needle)
+                                   true_answer=true_answer )
         case "langsmith":
             return LangSmithEvaluator()
         case _:
