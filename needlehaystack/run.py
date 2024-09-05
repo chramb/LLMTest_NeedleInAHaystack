@@ -44,6 +44,7 @@ class CommandArgs():
         " Prosciutto is one of the secret ingredients needed to build the perfect pizza. ", 
         " Goat cheese is one of the secret ingredients needed to build the perfect pizza. "
     ])
+    tokenizer: str = "tiktoken"
 
 def get_model_to_test(args: CommandArgs) -> ModelProvider:
     """
@@ -60,7 +61,7 @@ def get_model_to_test(args: CommandArgs) -> ModelProvider:
     """
     match args.provider.lower():
         case "openai":
-            return OpenAI(model_name=args.model_name)
+            return OpenAI(model_name=args.model_name, tokenizer=args.tokenizer)
         case "anthropic":
             return Anthropic(model_name=args.model_name)
         case "cohere":

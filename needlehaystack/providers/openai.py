@@ -1,6 +1,6 @@
 import os
 from operator import itemgetter
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from openai import AsyncOpenAI
 from langchain_openai import ChatOpenAI  
@@ -9,6 +9,9 @@ import tiktoken
 
 from .model import ModelProvider
 
+if TYPE_CHECKING:
+    import tiktoken
+    import tokenizers
 
 class OpenAI(ModelProvider):
     """
@@ -26,6 +29,7 @@ class OpenAI(ModelProvider):
 
     def __init__(self,
                  model_name: str = "gpt-3.5-turbo-0125",
+                 tokenizer: str = "tiktoken:auto",
                  model_kwargs: dict = DEFAULT_MODEL_KWARGS):
         """
         Initializes the OpenAI model provider with a specific model.
@@ -43,9 +47,13 @@ class OpenAI(ModelProvider):
 
         self.model_name = model_name
         self.model_kwargs = model_kwargs
-        self.api_key = api_key
-        self.model = AsyncOpenAI(api_key=self.api_key)
-        self.tokenizer = tiktoken.encoding_for_model(self.model_name)
+
+        found_tokenizer = self.get_encoder(model_name, tokenizer)
+        if found_tokenizer is None:
+            msg = f"Could not find correct tokenizer based on string: {tokenizer}"
+            raise ValueError(msg)
+
+        self.tokenizer = found_tokenizer
     
     async def evaluate_model(self, prompt: str) -> str:
         """
@@ -98,7 +106,11 @@ class OpenAI(ModelProvider):
         Returns:
             list[int]: A list of token IDs representing the encoded text.
         """
-        return self.tokenizer.encode(text)
+        encoding: list[int] | "tokenizers.Encoding" = self.tokenizer.encode(text)
+        if hasattr(encoding, "ids"):
+            return encoding.ids
+        else:
+            return encoding
     
     def decode_tokens(self, tokens: list[int], context_length: Optional[int] = None) -> str:
         """
@@ -154,4 +166,32 @@ class OpenAI(ModelProvider):
                 )
         return chain
     
+    def get_encoder(self, model_name: str, tokenizer_arg: str) -> "tiktoken.Encoding | tokenizers.Tokenizer | None":
+        parts = tokenizer_arg.split(":",1)
+        module = parts[0]
 
+        if module == "tiktoken":
+            import tiktoken
+            try:
+                if len(parts) < 2 or parts[1] == "auto":
+                    return tiktoken.encoding_for_model(model_name)
+                else:
+                    return tiktoken.get_encoding(parts[1])
+            except (ValueError, KeyError) as e:
+                msg = f"Encoding not Found, available encodings: {tiktoken.list_encoding_names()}"
+                raise ValueError(msg) from e
+
+        if len(parts) < 2:
+            msg = "Missing path part of tokenizer argument."
+            raise ValueError(msg)
+
+        if module in ("tokenizers", "hf", "huggingface"):
+            from tokenizers import Tokenizer
+            return Tokenizer.from_pretrained(parts[1])
+
+        if module == "file":
+            from tokenizers import Tokenizer
+            return Tokenizer.from_file(parts)
+
+        msg = f"tokenizer string '{tokenizer_arg}' could not be resolved to any tokenizer."
+        raise ValueError(msg)

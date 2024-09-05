@@ -79,6 +79,7 @@ class LLMNeedleHaystackTester:
         self.seconds_to_sleep_between_completions = seconds_to_sleep_between_completions
         self.print_ongoing_status = print_ongoing_status
         self.testing_results = []
+        self.tokenizer = kwargs.get("tokenizer")
 
         if context_lengths is None:
             if context_lengths_min is None or context_lengths_max is None or context_lengths_num_intervals is None:
@@ -169,7 +170,8 @@ class LLMNeedleHaystackTester:
             'model_response' : response,
             'score' : score,
             'test_duration_seconds' : test_elapsed_time,
-            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
+            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+            'tokenizer': self.tokenizer,
         }
 
         self.testing_results.append(results)

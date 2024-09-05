@@ -40,6 +40,7 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
         self.model_name = self.model_to_test.model_name
         self.print_ongoing_status = print_ongoing_status
         self.insertion_percentages = []
+        self.tokenizer = kwargs.get("tokenizer")
 
     async def insert_needles(self, context, depth_percent, context_length):
         """
@@ -198,7 +199,8 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
             'model_response' : response,
             'score' : score,
             'test_duration_seconds' : test_elapsed_time,
-            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
+            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+            "tokenizer": self.tokenizer,
             }
 
             self.testing_results.append(results)
